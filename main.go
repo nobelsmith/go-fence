@@ -82,7 +82,6 @@ func main() {
 
 	// check to see if line contains a request to one of the honeyPot phrases and ban the user
 	for line := range t.Lines {
-		log.Println(line.Text)
 		var v LogLine
 		err := json.Unmarshal([]byte(line.Text), &v)
 		if err != nil {
