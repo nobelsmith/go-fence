@@ -2,14 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/exp/slices"
+	"github.com/nxadm/tail"
 )
 
 // protectedIPs will not be banned even if they access routes in the honeyPot
@@ -75,67 +73,32 @@ func banPooh(ip string) error {
 }
 
 func main() {
-	// read access.log
-	file, err := os.Open(logFile)
+	// Create a tail
+	t, err := tail.TailFile(
+		logFile, tail.Config{Follow: true, ReOpen: true})
 	if err != nil {
-		log.Println(err)
+		panic(err)
 	}
-	defer file.Close()
 
-	// parse access.log
-	d := json.NewDecoder(file)
-	logLines := []LogLine{}
-	for {
+	// check to see if line contains a request to one of the honeyPot phrases and ban the user
+	for line := range t.Lines {
+		log.Println(line.Text)
 		var v LogLine
-		if err := d.Decode(&v); err == io.EOF {
-			break // done decoding file
-		} else if err != nil {
-			log.Println(err)
-		}
-		logLines = append(logLines, v)
-	}
-
-	// failedRequests := map[string][]LogLine{}
-	// poohBears is a slice of ip addresses to be banned
-	poohBears := []string{}
-	for _, v := range logLines {
-		// if protected IP continue to next line
-		if MatchPatternSlice(protectedIPs, v.RemoteAddr) {
-			continue
-			// if the ip address is already flagged continue to next line
-		} else if slices.Contains(poohBears, v.RemoteAddr) {
-			continue
-			// if the request matches a phrase from the honeyPot append user to slice to be banned
-		} else if stringContainsSlice(honeyPot, strings.ToLower(v.RequestURI)) {
-			poohBears = append(poohBears, v.RemoteAddr)
-		} //else if v.Status[:1] != "2" && v.Status[:1] != "3" {
-		// 	failedRequests[v.RemoteAddr] = append(failedRequests[v.RemoteAddr], v)
-		// }
-	}
-
-	for _, v := range poohBears {
-		// ban the offending user
-		log.Println(v, "banned")
-		err := banPooh(v)
+		err := json.Unmarshal([]byte(line.Text), &v)
 		if err != nil {
 			log.Println(err)
 		}
+
+		// if protected IP continue to next line
+		if MatchPatternSlice(protectedIPs, v.RemoteAddr) {
+			continue
+			// if the request matches a phrase from the honeyPot append user to slice to be banned
+		} else if stringContainsSlice(honeyPot, strings.ToLower(v.RequestURI)) {
+			err := banPooh(v.RemoteAddr)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println("banned", v.RemoteAddr)
+		}
 	}
 }
-
-// keys := make([]string, 0, len(failedRequests))
-// for k := range failedRequests {
-// 	keys = append(keys, k)
-// }
-// sort.SliceStable(keys, func(i, j int) bool {
-// 	return len(failedRequests[keys[i]]) > len(failedRequests[keys[j]])
-// })
-// for _, key := range keys {
-// 	if len(failedRequests[key]) < 10 {
-// 		break
-// 	}
-// 	for _, logline := range failedRequests[key] {
-// 		log.Println(logline.RemoteAddr, logline.Status, logline.RequestURI)
-// 	}
-
-// }
