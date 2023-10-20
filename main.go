@@ -15,7 +15,7 @@ import (
 var protectedIPs = []string{"192.168.*", "172.16.*", "10.*", "127*"}
 
 // honeyPot is a slice containing strings to search for inside of the requestUri
-var honeyPot = []string{"wp-admin", "wp-includes", ".aspx"}
+var honeyPot = []string{"wp-admin", "wp-login.php", ".aspx", }
 
 // logFile is the path to the access.log to be parsed
 var logFile = "/var/log/nginx/access.log"
