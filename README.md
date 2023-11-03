@@ -102,7 +102,7 @@ An example nginx.conf file can be found in the examples folder of the project.
 ### Setup Protected IPs, Honey Pots, and Log File within main.go
 ```
 var protectedIPs = []string{"192.168.*", "172.16.*", "10.*", "127*"}
-var honeyPot = []string{"wp-admin", "wp-includes", ".aspx"}
+var forbiddenLocations = []string{"wp-admin", "wp-login.php"}
 var logFile = "/var/log/nginx/access.log"
 ```
 
