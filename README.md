@@ -99,11 +99,18 @@ Add the following lines to your nginx.conf (likely found at /etc/nginx/nginx.con
 ```
 An example nginx.conf file can be found in the examples folder of the project.
 
-### Setup Protected IPs, Honey Pots, and Log File within main.go
+### Setup Protected IPs, Forbiddedn Locations, and Log File within your config
+
 ```
-var protectedIPs = []string{"192.168.*", "172.16.*", "10.*", "127*"}
-var forbiddenLocations = []string{"wp-admin", "wp-login.php"}
-var logFile = "/var/log/nginx/access.log"
+forbiddenlocations:
+    - wp-admin
+    - wp-login.php
+nginxlogfile: /var/log/nginx/access.log
+protectedips:
+    - 192.168.*
+    - 172.16.*
+    - 10.*
+    - 127*
 ```
 
 ## 🚀 Deployment <a name = "deployment"></a>
@@ -115,10 +122,30 @@ go build -o go-fence
 
 ### Setup Project on Host Machine
 
-One way to use this executable would be to put it into an executable directory such as bin and then schedule a cronjob to use it. For example:
+Firstly setup a config file or let go-fence do it for you with the init command.
 ```
-# crontab -e
-* * * * * /usr/local/bin/go-fence >> /var/log/go-fence.log
+go-fence init
+```
+
+One way to use this executable would be to put it make it a systemd service. 
+Below is an example systemd service config.
+```
+[Unit]
+Description = go-fence
+
+[Service]
+Type           = simple
+User           = root
+Group          = root
+LimitNOFILE    = 4096
+Restart        = always
+RestartSec     = 5s
+StandardOutput = append:/var/log/go-fence.log
+StandardError  = append:/var/log/go-fence.log
+ExecStart      = /usr/local/bin/go-fence --config /home/nobel/.go-fence.yaml watch
+
+[Install]
+WantedBy = multi-user.target
 ```
 ## ⛏️ Built Using <a name = "built_using"></a>
 
