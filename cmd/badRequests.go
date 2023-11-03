@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -17,8 +14,17 @@ var badRequestsCmd = &cobra.Command{
 	Short: "Reads through log file and prints bad requests (4xx and 5xx)",
 	Long: `Reads through a log file and prints requests that failed.
 The output is grouped by ip address and sorted by the number of failed requests.`,
+
 	Run: func(cmd *cobra.Command, args []string) {
-		err := pkg.BadRequests(viper.GetString("nginxlogfile"), viper.GetStringSlice("protectedips"), viper.GetStringSlice("forbiddenlocations"))
+		err := pkg.ReadConfig(CfgFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if DryRun {
+			log.Println("dry-run specified, but this command doesn't ban users")
+		}
+		err = pkg.BadRequests(viper.GetString("nginxlogfile"), viper.GetStringSlice("protectedips"), viper.GetStringSlice("forbiddenlocations"))
 		if err != nil {
 			log.Fatal(err)
 		}

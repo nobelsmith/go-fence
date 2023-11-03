@@ -14,9 +14,13 @@ var scanCmd = &cobra.Command{
 	Short: "Reads through log file and bans users",
 	Long: `Reads through a log file and will ban users if
 	a they have tried to access a forbidden location.`,
+
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Println("dryrun is", viper.GetBool("dry-run"))
-		err := pkg.Scan(viper.GetString("nginxlogfile"), viper.GetStringSlice("protectedips"), viper.GetStringSlice("forbiddenlocations"), dryRun)
+		err := pkg.ReadConfig(CfgFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = pkg.Scan(viper.GetString("nginxlogfile"), viper.GetStringSlice("protectedips"), viper.GetStringSlice("forbiddenlocations"), DryRun)
 		if err != nil {
 			log.Fatal(err)
 		}

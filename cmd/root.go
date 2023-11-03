@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -10,9 +11,9 @@ import (
 )
 
 var (
-	cfgFile = ""
+	CfgFile = ""
 	version = false
-	dryRun  = false
+	DryRun  = false
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -28,9 +29,9 @@ as json and to be run on a system that is running iptables.`,
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if version {
-			log.Println("go-fence version 0.0.2")
+			fmt.Println("go-fence version 0.0.3")
 		} else {
-			log.Println(`Use "go-fence --help" for more information.`)
+			fmt.Println(`Use "go-fence --help" for more information.`)
 		}
 	},
 }
@@ -46,20 +47,17 @@ func Execute() {
 
 func init() {
 	// global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (if left blank a default will be created at $HOME/.go-fence.yaml)")
-	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "output offending users without banning")
+	rootCmd.PersistentFlags().StringVar(&CfgFile, "config", "", "config file (if left blank a default will be created at $HOME/.go-fence.yaml)")
+	rootCmd.PersistentFlags().BoolVar(&DryRun, "dry-run", false, "output offending users without banning")
 
 	//local flags
 	rootCmd.Flags().BoolVarP(&version, "version", "v", false, "application version")
 }
 
 func initConfig() {
-	if version {
-		return
-	}
-	if cfgFile != "" {
+	if CfgFile != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		viper.SetConfigFile(CfgFile)
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
@@ -70,23 +68,36 @@ func initConfig() {
 		viper.SetConfigType("yaml")      // REQUIRED if the config file does not have the extension in the name
 		viper.AddConfigPath(home)        // path to look for the config file in
 	}
-
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Config file not found; ignore error if desired
-			log.Println("no config file found")
-			if cfgFile == "" {
-				log.Println("using defaults")
-				viper.SetDefault("NginxLogFile", "/var/log/nginx/access.log")
-				viper.SetDefault("ProtectedIPs", []string{"192.168.*", "172.16.*", "10.*", "127*"})
-				viper.SetDefault("ForbiddenLocations", []string{"wp-admin", "wp-login.php", ".aspx"})
-				err := viper.SafeWriteConfig()
-				if err != nil {
-					log.Println("Error writing config file: ", err)
-				}
-			}
-		} else {
-			log.Println("problem with config file: ", err)
-		}
-	}
 }
+
+// func initConfig() {
+// 	if version {
+// 		return
+// 	}
+
+// 	if cfgFile != "" {
+// 		// Use config file from the flag.
+// 		viper.SetConfigFile(cfgFile)
+// 	} else {
+// 		// Find home directory.
+// 		home, err := homedir.Dir()
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		viper.SetConfigName(".go-fence") // name of config file (without extension)
+// 		viper.SetConfigType("yaml")      // REQUIRED if the config file does not have the extension in the name
+// 		viper.AddConfigPath(home)        // path to look for the config file in
+// 	}
+
+// 	if err := viper.ReadInConfig(); err != nil {
+// 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+// 			// Config file not found; ignore error if desired
+// 			fmt.Println("unable to find config file at ", cfgFile)
+// 			if cfgFile == "" {
+// 				fmt.Println(`no config file found, to create a default config file at $HOME/.go-fence.yaml by running "go-fence init"`)
+// 			}
+// 		} else {
+// 			fmt.Println("problem with config file: ", err)
+// 		}
+// 	}
+// }

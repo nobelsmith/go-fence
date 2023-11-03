@@ -21,7 +21,7 @@ func Watch(logFile string, protectedIPs []string, forbiddenLocations []string, d
 		var v LogLine
 		err := json.Unmarshal([]byte(line.Text), &v)
 		if err != nil {
-			log.Println(err)
+			return err
 		}
 
 		// if protected IP continue to next line
@@ -30,16 +30,18 @@ func Watch(logFile string, protectedIPs []string, forbiddenLocations []string, d
 			// if the request matches a phrase from the forbiddenLocations append user to slice to be banned
 		} else if stringContainsSlice(forbiddenLocations, strings.ToLower(v.RequestURI)) {
 			if dryRun {
-				log.Println("(dry-run) banned", v.RemoteAddr)
+				log.Println("(dry-run) banned", "[", v.RemoteAddr, "] - ", line.Text)
 			} else {
 				err := banScriptKitty(v.RemoteAddr)
 				if err != nil {
 					return err
 				}
-				log.Println("banned", v.RemoteAddr)
+				log.Println("banned", "[", v.RemoteAddr, "] - ", line.Text)
 			}
 		}
 	}
-
+	if t.Err() != nil {
+		return t.Err()
+	}
 	return nil
 }

@@ -14,8 +14,13 @@ var watchCmd = &cobra.Command{
 	Short: "Mimicks tail -f funcionality on log file and bans users",
 	Long: `Follows a log file and will survive things like log rotate.
 If a user hits a forbidden location they will be banned.`,
+
 	Run: func(cmd *cobra.Command, args []string) {
-		err := pkg.Watch(viper.GetString("nginxlogfile"), viper.GetStringSlice("protectedips"), viper.GetStringSlice("forbiddenlocations"), dryRun)
+		err := pkg.ReadConfig(CfgFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = pkg.Watch(viper.GetString("nginxlogfile"), viper.GetStringSlice("protectedips"), viper.GetStringSlice("forbiddenlocations"), DryRun)
 		if err != nil {
 			log.Fatal(err)
 		}

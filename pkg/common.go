@@ -2,12 +2,15 @@ package pkg
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type LogLine struct {
@@ -83,4 +86,21 @@ func readLogFile(logFile string) ([]LogLine, error) {
 		logLines = append(logLines, v)
 	}
 	return logLines, nil
+}
+
+func ReadConfig(cfgFile string) error {
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; ignore error if desired
+			if cfgFile == "" {
+				fmt.Println(`no config file found, to create a default config file at $HOME/.go-fence.yaml by running "go-fence init"`)
+			} else {
+				fmt.Println("unable to find config file at ", cfgFile)
+			}
+		} else {
+			fmt.Println("problem with config file: ", err)
+		}
+	}
+	return err
 }
